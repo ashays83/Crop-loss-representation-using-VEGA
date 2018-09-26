@@ -3,7 +3,7 @@
   "description": "A bar chart showing losses",
   "width": 500,
   "data": { "url": "https://raw.githubusercontent.com/ashays83/VA/master/losses2015_transformed.csv"},
-  "title": "Crop Losses in US",
+  "title": "Losses in US",
   "mark": "bar",
   "encoding": {
     "y": {
