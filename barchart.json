@@ -1,0 +1,16 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A bar chart showing losses",
+  "width": 500,
+  "data": { "url": "https://raw.githubusercontent.com/ashays83/VA/master/losses2015_transformed.csv"},
+  "title": "Crop Losses in US",
+  "mark": "bar",
+  "encoding": {
+    "y": {
+      "field": "Damage_Descp", "type": "ordinal", "title": "Damage Description", "sort": {"op": "mean", "field": "Amount", "order": "ascending"}
+    },
+    "x": {
+      "aggregate": "mean", "field": "Amount", "type": "quantitative", "title": "Total Loss in US Dollars" 
+    }
+  }
+}
