@@ -1,0 +1,29 @@
+body{
+          barMargin: 0;
+        }
+
+        Svg {
+          border: 1px solid rgb(206, 205, 205)
+        }
+
+        Svg .myrect {
+            fill: steelblue;
+            stroke-width: 0px;
+        }
+        Svg .myrect:hover {
+            fill: red;
+        }
+
+        .all-states {
+          fill: none;
+        }
+
+        .state:hover {
+          fill: red;
+        }
+
+        .state-border {
+          fill: none;
+          stroke: #fff;
+          stroke-linejoin: round;
+        }
