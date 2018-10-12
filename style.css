@@ -2,28 +2,28 @@ body{
           barMargin: 0;
         }
 
-        Svg {
-          border: 1px solid rgb(206, 205, 205)
-        }
+        
 
         Svg .myrect {
-            fill: steelblue;
+            fill: #41c4f4;
             stroke-width: 0px;
         }
         Svg .myrect:hover {
-            fill: red;
+            fill: #f47141;
         }
-
+		Svg {
+          border: 1px solid rgb(207, 205, 205)
+        }
         .all-states {
           fill: none;
         }
 
         .state:hover {
-          fill: red;
+          fill: #f4415b;
         }
 
         .state-border {
           fill: none;
-          stroke: #fff;
+          stroke: #160b0b;
           stroke-linejoin: round;
         }
