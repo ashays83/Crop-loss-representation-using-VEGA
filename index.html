@@ -1,43 +1,287 @@
+
 <!DOCTYPE html>
+<html>
+  <head>
+      <title>Losses 2015</title>
+      <script src="https://d3js.org/d3.v5.min.js"></script>
+      <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+      <script src="https://d3js.org/topojson.v2.min.js"></script>
 
-<head>
-  
-<title>Bar Chart and Choropeth Map</title>
+      <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id='container'>
+      <div id='Container-Bar'>
+        <Svg id='Svg-bar'></Svg>
+      </div>
+      <div id='Container-Chloro'>
+        <Svg id='Chloro-Svg'></Svg>
+      </div>
+    </div>
 
- <meta charset="utf-8">
-  
- <script src="https://cdn.jsdelivr.net/npm/vega@4"></script>
- 
- <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc3"></script>
- 
- <script src="https://cdn.jsdelivr.net/npm/vega-embed@3"></script>
+    <script type="text/javascript">
+      var Master;
+      var BarData;
+      var ChloroData;
+      var barMargin = {top: 15, right: 15, bottom: 45, left: 150};
+      var widthSvgBar = 1000
+      var heightSvgBar = 750
+      var widthBarG = widthSvgBar - barMargin.left - barMargin.right;
+      var heightBarG = heightSvgBar - barMargin.top - barMargin.bottom;
+      var ChloroMargin = {top: 15, right: 15, bottom: 45, left: 150};
+      var ChloroWidthSvg = 1000
+      var ChloroHeightSvg = 750
+      var ChloroWidthG = ChloroWidthSvg - ChloroMargin.left - ChloroMargin.right;
+      var ChloroHeightG = ChloroHeightSvg - ChloroMargin.top - ChloroMargin.bottom;
 
-</head>
+      
 
-<body>
+      function ChloroDataGenerator(MasterData, type) {
+          
+        if(type === null || type === 'All' || type === 'all'){
+          ChloroData = d3.nest()
+                      .key(function(d) { return d.State_Code;})
+                      .rollup(function(d) { return d3.sum(d, function(g) {return g.Amount; });
+                      })
+                      
+                      .entries(MasterData)
+                      .sort(function(a, b){ return d3.ascending(a.values, b.values); });
+       
+        }else{
+          ChloroData = d3.nest()
+                      .key(function(d) { return d.State_Code;})
+                      .rollup(function(d) {return d3.sum(d, function(g) {return g.Amount; });
+                      })
+                      .entries(MasterData.filter(function(d) {return d.Damage_Descp === type;}))
+                     
+        }
+      
+        ChloroData.filter(function(d,i) {
+            
+          return null})
+    
+      }
+	  
 
-<!-- Container for the visualization -->
+      function BarChartRemove(){
+          var Svg_G = d3.select("#Svg_bar_g")
+          Svg_G.remove()
+      }
 
-<div id="vis">
-</div>
-<script type="text/javascript">
-  
-var spec = "https://raw.githubusercontent.com/ashays83/VA/master/barchart.json";
-  vegaEmbed('#vis', spec).then(function(result) {
-    // Access the Vega view instance (https://vega.github.io/vega/docs/api/view/) as result.view
-  }).catch(console.error);
-</script>
+      function BarChartCreate(chartData) {
+        
+        var Svg = d3.select("#Svg-bar")
+                    .attr("width", widthSvgBar)
+                    .attr("height", heightSvgBar)
+                    .append("g")
+                    .attr("id", "Svg_bar_g")
+                    .attr("width", widthBarG)
+                    .attr("height", heightBarG)
+                    .attr("transform", `translate(${barMargin.left},${barMargin.top})`);
 
-<div id="visual1"></div>
+     
+        var ScaleY = d3.scaleBand()
+                              .domain(chartData.map( function(d) 
+                                { return d.key;
+                                }))
+                              .range([0, heightBarG])
+                              .paddingInner(0.15);
 
-<script type="text/javascript">
- 
-var spec = "https://raw.githubusercontent.com/ashays83/VA/master/chloropeth.json";
-  vegaEmbed('#visual1', spec).then(function(result) {
-  }).catch(console.error);
+        var ScaleX = d3.scaleLinear()
+                              .domain([0, d3.max(chartData, function(d) { return (d.value/1000000); })])
+                              .range([0, widthBarG]);
 
-</script>
+       
+        Svg.append("g")
+            .attr("transform", "translate(20,0)")
+            .call(d3.axisLeft(ScaleY));
 
-</body>
+        Svg.append("g")
+            
+            .attr("transform", "translate("+ (20) +"," + (heightBarG) + ")")
+            .call(d3.axisBottom(ScaleX));
 
+        
+        Svg.selectAll("rect")
+            .data(chartData)
+            .enter()
+            .append("rect")
+            .attr("transform", "translate(20,0)")
+            .attr("x", 0)
+            .attr("y", function(d, i)
+              {
+                return ScaleY(d.key)
+              })
+            .attr("height", function(d, i)
+              {
+                return ScaleY.bandwidth();
+              })
+            .attr("width", function(d, i)
+              {
+                
+                return ScaleX(d.value/1000000)
+              })
+            .attr("class", "myrect")
+            .on("mouseover", function(d) {
+               
+              ChloroDataGenerator(Master,d.key)
+              ShowMap(ChloroData);
+            })
+            .on("mouseout", function(d) {
+              
+              ChloroDataGenerator(Master,null)
+              ShowMap(ChloroData);
+            })
+      }
+	  function DataLoad()
+      {
+        d3.csv("https://raw.githubusercontent.com/ashays83/VA/master/losses2015_transformed.csv")
+          .then(function(data)
+          {
+            Master = data
+            BarDataGenerator(Master, null) 
+            BarChartCreate(BarData);
+            ChloroDataGenerator(Master, null)
+            ShowMap(ChloroData)
+          }
+        );
+      }
+      
+      function BarDataGenerator(MasterData, state) {
+        console.log(state + "  State Bar Chart \n")
+
+        if(state === 'all' || state === 'All' || state === null){
+          BarData = d3.nest()
+                      .key(function(d) { return d.Damage_Descp;})
+                      .rollup(function(d) { 
+                        return d3.sum(d, function(g) {return g.Amount; });
+                      })
+                      .entries(MasterData)
+                      .sort(function(a, b){ return d3.ascending(a.values, b.values); });
+          BarData.sort(function (a, b) {return a.value - b.value;})
+        }else{
+          if(state < 10){
+            state = state.replace(/^0+(?!\.|$)/, '')   
+          }
+          BarData = d3.nest()
+                      .key(function(d) { return d.Damage_Descp;})
+                      .rollup(function(d) { 
+                        return d3.sum(d, function(g) {return g.Amount; });
+                      })
+                      .entries(MasterData.filter(function(d) {return d.State_Code === state;}))
+                      .sort(function(a, b){ return d3.ascending(a.values, b.values); });
+          BarData.sort(function (a, b) {return a.value - b.value;})
+        }
+       
+      }
+      
+      function ShowMap(ChloroData){
+        const mapWidth = 980
+        const mapHeight = 620
+
+        var Svg = d3.select("#Chloro-Svg")
+            .attr("width",mapWidth)
+            .attr("height",mapHeight);
+
+       
+
+        var losses = d3.map();
+        ChloroData.map(function(d,i) { 
+          if(d.key > 10){
+          losses.set(d.key, d.value); 
+          }else{
+            losses.set(("0"+d.key).slice(-2), d.value); 
+          }})
+        var path = d3.geoPath();
+
+        var x = d3.scaleLinear()
+            .domain([11,20])
+            .rangeRound([500, 860]);
+
+        var color = d3.scaleThreshold()
+            .domain(d3.range(12, 20))
+            .range(d3.schemeBlues[9]);
+
+        var colorQ = d3.scaleQuantize()
+        .domain(1,10)
+        .range(d3.schemeBlues[9]);
+
+
+        var g = Svg.append("g")
+                .attr("class", "key")
+                .attr("transform", "translate(0,40)");
+
+            g.selectAll("rect")
+            .data(color.range().map(function(d) {
+                d = color.invertExtent(d);
+                if (d[0] == null) d[0] = x.domain()[0];
+                if (d[1] == null) d[1] = x.domain()[1];
+                return d;
+                }))
+            .enter().append("rect")
+                .attr("height", 8)
+                .attr("x", function(d) { return x(d[0]); })
+                .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+                .attr("fill", function(d) { return color(d[0]); });
+
+            g.append("text")
+                .attr("class", "caption")
+                .attr("x", x.range()[0])
+                .attr("y", -6)
+                .attr("fill", "#000")
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("Agri Losses 2015");
+
+            g.call(d3.axisBottom(x)
+                .tickSize(13)
+                .tickFormat(function(x, i) { return i ? x : x + "M"; })
+                .tickValues(color.domain()))
+            .select(".domain")
+                .remove();
+
+
+            var mapper = [d3.json("https://d3js.org/us-10m.v1.json")] 
+            Promise.all(mapper).then(ready)
+            function ready([us]) {
+           
+                Svg.append("path")
+                  .attr('stroke',"#000")
+                  .attr("stroke-width", 1)
+                  .attr("class", "country-bord+er")
+                  .attr("d", path(topojson.feature(us, us.objects.nation)));
+
+             
+                Svg.append("path")
+                  .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+                  .attr("class", "state-border")
+                  .attr("d", path);
+
+             
+              var state_g = Svg.append("g")
+                  state_g.selectAll("path")
+                  .data(topojson.feature(us, us.objects.states).features)
+                  .enter().append("path")
+                  .attr("class","state")
+                  .on("mouseover", function(d) {
+                      console.log("State ID: "+d.id + " Amount: "+d.amount)
+                      BarChartRemove()
+                      BarDataGenerator(Master, d.id);
+                      BarChartCreate(BarData)
+                        })
+                  .on("mouseout", function(d) {
+                      BarChartRemove()
+                      BarDataGenerator(Master, null);
+                      BarChartCreate(BarData)
+                  })
+                  .attr("fill", function(d) { return color((d.amount = losses.get(d.id))/10000000); })
+                  .attr("d", path)
+                  .append("title")
+                  .text(function(d) { return "State ID: "+ d.id + " Amount: " + d.amount ; });
+            }
+        }
+      
+      window.onload = DataLoad;
+  </script>
+  </body>
 </html>
